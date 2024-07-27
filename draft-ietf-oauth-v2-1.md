@@ -1743,11 +1743,53 @@ authorization response by attackers. Using `code_challenge` and `code_verifier` 
 
 #### Error Response {#authorization-code-error-response}
 
-If the request fails due to a missing, invalid, or mismatching
-redirect URI, or if the client identifier is missing or invalid,
-the authorization server SHOULD inform the resource owner of the
-error and MUST NOT automatically redirect the user agent to the
-invalid redirect URI.
+~~~~~~~~~~
++----------+
+| Resource |
+|   Owner  |
++----------+
+      ^
+      |
+      |
++-----|----+          Client Identifier      +---------------+
+| .---+---------(1)-- & Redirect URI ------->|               |
+| |   |    |                                 |               |
+| |   '---------(2)-- User authenticates --->|               |
+| | User-  |     (only if request is valid)  | Authorization |
+| | Agent  |                                 |     Server    |
+| |        |                                 |               |
+| |    .--------(3)-- Error Response -------<|               |
++-|----|---+                                 +---------------+
+  |    |
+  |    |
+  ^    v
++---------+
+|         |
+|  Client |
+|         |
+|         |
++---------+
+~~~~~~~~~~
+{: #fig-authorization-code-error-flow title="Authorization Code Error Flow"}
+
+The flow illustrated in {{fig-authorization-code-error-flow}} includes the following steps:
+
+(1)  The client initiates the flow by directing the resource owner's
+user agent to the authorization endpoint.  The client includes
+its client identifier, code challenge (derived from a generated code verifier),
+optional requested scope, optional local state, and a
+redirect URI to which the authorization server will send the
+user agent back if the request fails (or denied).
+
+(2)  If the request does not fail the authorization server authenticates the
+resource owner (via the user agent) and establishes whether the resource owner
+grants or denies the client's access request.
+
+(3)  If the request fails due to a missing, invalid, or mismatching
+redirect URI, or if the client identifier is missing or invalid, or the
+access is denied by the resource owner, the authorization server SHOULD
+inform the resource owner of the error or denial and MUST NOT
+redirect the user agent to the invalid redirect URI.
 
 An AS MUST reject requests without a `code_challenge` from public clients,
 and MUST reject such requests from other clients unless there is
@@ -1833,7 +1875,7 @@ parameters to the query component of the redirect URI using the
 :    OPTIONAL. The identifier of the authorization server. See
      {{authorization-response}} above for details.
 
-For example, the authorization server redirects the user agent by
+For example, the authorization server redirects the user agent to the client by
 sending the following HTTP response:
 
     HTTP/1.1 302 Found
